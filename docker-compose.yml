@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pgc_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-pgc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pgc_password}
+      POSTGRES_DB: ${DB_NAME:-pgc_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pgc_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: pgc_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-pgc_db}
+      - DB_USERNAME=${DB_USER:-pgc_user}
+      - DB_PASSWORD=${DB_PASSWORD:-pgc_password}
+      # Required AWS credentials
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      # JWT
+      - JWT_SECRET=${JWT_SECRET:-this-is-a-super-secret-key-for-jwt-signing-which-should-be-changed-in-production}
+      - JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS:-86400000}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
