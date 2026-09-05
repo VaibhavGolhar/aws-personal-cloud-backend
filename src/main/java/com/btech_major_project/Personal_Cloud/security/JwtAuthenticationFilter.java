@@ -41,14 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } else {
             String token = authHeader.substring(7);
             if (jwtService.isValid(token)) {
-                String email = jwtService.extractSubject(token);
+                String username = jwtService.extractSubject(token);
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("JWT valid, principal set: " + email + ", uri=" + uri);
+                    log.debug("JWT valid, principal set: " + username + ", uri=" + uri);
                 }
             } else {
                 log.warn("Invalid JWT: method=" + method + ", uri=" + uri);

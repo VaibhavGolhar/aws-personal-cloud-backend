@@ -37,7 +37,7 @@ public class FileController {
     }
 
     private User currentUser(UserDetails principal) {
-        return userService.findByEmail(principal.getUsername());
+        return userService.findByUsername(principal.getUsername());
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

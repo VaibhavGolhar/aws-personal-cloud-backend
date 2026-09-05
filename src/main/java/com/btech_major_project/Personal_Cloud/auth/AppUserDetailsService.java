@@ -18,13 +18,13 @@ public class AppUserDetailsService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
-    // Username is the email
+    // Username is the username
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        com.btech_major_project.Personal_Cloud.user.User u = userRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        com.btech_major_project.Personal_Cloud.user.User u = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return new org.springframework.security.core.userdetails.User(
-                u.getEmail(),
+                u.getUsername(),
                 u.getPasswordHash(),
                 List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );

@@ -33,17 +33,17 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
-        log.info("POST /api/auth/register email=" + req.getEmail());
+        log.info("POST /api/auth/register username=" + req.getUsername());
         String token = authService.register(req);
-        log.info("User registered successfully email=" + req.getEmail());
+        log.info("User registered successfully username=" + req.getUsername());
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
-        log.info("POST /api/auth/login email=" + req.getEmail());
+        log.info("POST /api/auth/login username=" + req.getUsername());
         String token = authService.login(req);
-        log.info("User logged in successfully email=" + req.getEmail());
+        log.info("User logged in successfully username=" + req.getUsername());
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
@@ -55,8 +55,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiError("UNAUTHORIZED", "Authentication required", null));
         }
-        User u = userService.findByEmail(principal.getUsername());
+        User u = userService.findByUsername(principal.getUsername());
         log.info("/api/auth/me resolved user id=" + u.getId());
-        return ResponseEntity.ok(new UserProfileResponse(u.getId(), u.getEmail(), u.getFullName()));
+        return ResponseEntity.ok(new UserProfileResponse(u.getId(), u.getUsername(), u.getFullName()));
     }
 }

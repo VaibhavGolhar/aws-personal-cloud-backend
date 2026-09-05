@@ -1,14 +1,13 @@
 package com.btech_major_project.Personal_Cloud.user;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+        @UniqueConstraint(name = "uk_users_username", columnNames = "username")
 })
 public class User {
 
@@ -16,10 +15,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Email
     @NotBlank
     @Column(nullable = false, updatable = false)
-    private String email;
+    private String username;
 
     @NotBlank
     @Column(name = "password_hash", nullable = false)
@@ -54,9 +52,9 @@ public class User {
 
     public Long getId() { return id; }
 
-    public String getEmail() { return email; }
+    public String getUsername() { return username; }
 
-    public void setEmail(String email) { this.email = email; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getPasswordHash() { return passwordHash; }
 

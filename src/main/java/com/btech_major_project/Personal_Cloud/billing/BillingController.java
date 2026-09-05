@@ -29,7 +29,7 @@ public class BillingController {
     @GetMapping("/current")
     public ResponseEntity<BillingSummary> current(@AuthenticationPrincipal UserDetails principal) {
         log.info("GET /api/billing/current principal=" + (principal != null ? principal.getUsername() : "anonymous"));
-        User user = userService.findByEmail(principal.getUsername());
+        User user = userService.findByUsername(principal.getUsername());
         BillingSummary summary = billingService.calculateCurrent(user);
         return ResponseEntity.ok(summary);
     }

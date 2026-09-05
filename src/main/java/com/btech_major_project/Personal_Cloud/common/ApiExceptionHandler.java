@@ -25,8 +25,14 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
-        log.warn("Validation error: " + ex.getMessage());
-        ApiError error = new ApiError("VALIDATION_ERROR", ex.getMessage(), null);
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(java.util.stream.Collectors.joining(", "));
+        if (message.isEmpty()) {
+            message = "Validation failed";
+        }
+        log.warn("Validation error: " + message);
+        ApiError error = new ApiError("VALIDATION_ERROR", message, null);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -57,6 +63,13 @@ public class ApiExceptionHandler {
         log.error("S3 error: " + ex.getMessage() + (details != null ? (" details=" + details) : ""), ex);
         ApiError error = new ApiError("S3_ERROR", ex.getMessage(), details);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuthentication(org.springframework.security.core.AuthenticationException ex) {
+        log.warn("Authentication error: " + ex.getMessage());
+        ApiError error = new ApiError("UNAUTHORIZED", "Invalid username or password", null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(Exception.class)

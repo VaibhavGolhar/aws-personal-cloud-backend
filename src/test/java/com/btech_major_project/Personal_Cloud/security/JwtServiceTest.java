@@ -2,7 +2,6 @@ package com.btech_major_project.Personal_Cloud.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,22 +11,35 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set a valid secret key for HMAC SHA256 (at least 32 bytes)
-        jwtService = new JwtService("my-super-secret-key-that-is-at-least-32-bytes-long", 3600000L);
+        // Must be at least 256 bits (32 bytes) for HMAC-SHA256
+        String secret = "this-is-a-very-long-secret-key-for-testing-purposes-123456";
+        jwtService = new JwtService(secret, 3600000); // 1 hour expiration
     }
 
     @Test
-    void testGenerateAndValidateToken() {
-        String email = "test@example.com";
-        String token = jwtService.generateToken(email);
-        
+    void testGenerateAndExtractToken() {
+        String token = jwtService.generateToken("testuser");
         assertNotNull(token);
-        assertTrue(jwtService.isValid(token));
-        assertEquals(email, jwtService.extractSubject(token));
+
+        String subject = jwtService.extractSubject(token);
+        assertEquals("testuser", subject);
     }
 
     @Test
-    void testValidateInvalidToken() {
+    void testIsValid_Success() {
+        String token = jwtService.generateToken("testuser");
+        assertTrue(jwtService.isValid(token));
+    }
+
+    @Test
+    void testIsValid_FailsForInvalidToken() {
         assertFalse(jwtService.isValid("invalid.token.here"));
+    }
+
+    @Test
+    void testIsValid_FailsForExpiredToken() {
+        JwtService shortLivedService = new JwtService("this-is-a-very-long-secret-key-for-testing-purposes-123456", -1000); // Expired 1 sec ago
+        String token = shortLivedService.generateToken("testuser");
+        assertFalse(jwtService.isValid(token));
     }
 }

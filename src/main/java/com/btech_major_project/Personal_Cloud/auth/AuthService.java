@@ -32,23 +32,23 @@ public class AuthService {
     }
 
     public String register(RegisterRequest req) {
-        if (userRepository.existsByEmail(req.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+        if (userRepository.existsByUsername(req.getUsername())) {
+            throw new IllegalArgumentException("Username already registered");
         }
         User u = new User();
-        u.setEmail(req.getEmail());
+        u.setUsername(req.getUsername());
         u.setFullName(req.getFullName());
         u.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         // Non‑guessable per‑user S3 prefix
         u.setS3Prefix("u-" + UUID.randomUUID() + "/");
         userRepository.save(u);
-        return jwtService.generateToken(u.getEmail());
+        return jwtService.generateToken(u.getUsername());
     }
 
     public String login(LoginRequest req) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
+                new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
         );
-        return jwtService.generateToken(req.getEmail());
+        return jwtService.generateToken(req.getUsername());
     }
 }
