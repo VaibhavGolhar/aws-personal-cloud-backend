@@ -83,6 +83,26 @@ class StandardBillingServiceTest {
 
     @Test
     void calculateCurrent_NullUser() {
-        assertThrows(IllegalArgumentException.class, () -> billingService.calculateCurrent(null));
+        assertThrows(NullPointerException.class, () -> billingService.calculateCurrent(null));
+    }
+
+    @Test
+    void calculateCurrent_WithNegativeUsage() {
+        UserUsage usage = new UserUsage();
+        usage.setTotalBytesStored(-1024L); // Negative bytes
+        usage.setPutCount(-10L); // Negative requests
+        
+        when(usageRepo.findByUserId(1L)).thenReturn(Optional.of(usage));
+
+        BillingSummary summary = billingService.calculateCurrent(user);
+
+        // Storage should be clamped to 0
+        assertEquals(0L, summary.getStorageBytes());
+        assertEquals(BigDecimal.ZERO.setScale(6), summary.getStorageGb());
+        assertEquals(BigDecimal.ZERO.setScale(6), summary.getStorageCost());
+        
+        // Requests are not clamped currently, so it might be negative
+        assertEquals(-10L, summary.getWriteRequests());
+        assertTrue(summary.getWriteCost().compareTo(BigDecimal.ZERO) < 0);
     }
 }

@@ -114,6 +114,17 @@ class S3StorageServiceTest {
     }
 
     @Test
+    void upload_EmptyFile() throws IOException {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> s3StorageService.upload(user, file, "docs"));
+        assertEquals("File is empty", ex.getMessage());
+        
+        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+    @Test
     void upload_S3Exception_WithDetails() {
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
         software.amazon.awssdk.awscore.exception.AwsErrorDetails details = software.amazon.awssdk.awscore.exception.AwsErrorDetails.builder().errorMessage("err").build();
@@ -227,5 +238,13 @@ class S3StorageServiceTest {
         when(s3Client.deleteObject(any(DeleteObjectRequest.class))).thenThrow(S3Exception.builder().message("err").build());
 
         assertThrows(S3Exception.class, () -> s3StorageService.delete(user, 10L));
+    }
+
+    @Test
+    void delete_NotFound() {
+        when(fileRepo.findByIdAndUserId(10L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> s3StorageService.delete(user, 10L));
+        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 }

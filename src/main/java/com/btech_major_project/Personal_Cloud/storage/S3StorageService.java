@@ -42,6 +42,9 @@ public class S3StorageService implements StorageService {
     }
 
     public FileMetadata upload(User user, MultipartFile file, String subPath) throws IOException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
         String safeName = file.getOriginalFilename() == null ? "unnamed" : file.getOriginalFilename();
         String normalizedPath = (subPath == null || subPath.isBlank()) ? "" : subPath.trim();
         if (!normalizedPath.endsWith("/") && !normalizedPath.isEmpty()) normalizedPath += "/";

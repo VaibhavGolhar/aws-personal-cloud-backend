@@ -140,4 +140,34 @@ class FileControllerTest {
     void delete_NullPrincipal() {
         assertThrows(NullPointerException.class, () -> fileController.delete(null, 10L));
     }
+
+    @Test
+    void upload_EmptyFile() throws IOException {
+        when(userDetails.getUsername()).thenReturn("testuser");
+
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> fileController.upload(userDetails, file, "docs"));
+    }
+
+    @Test
+    void download_NotFound() {
+        when(userDetails.getUsername()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(user);
+
+        when(storageService.download(user, 10L)).thenThrow(new IllegalArgumentException("File not found"));
+
+        assertThrows(IllegalArgumentException.class, () -> fileController.download(userDetails, 10L));
+    }
+
+    @Test
+    void delete_NotFound() {
+        when(userDetails.getUsername()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(user);
+
+        doThrow(new IllegalArgumentException("File not found")).when(storageService).delete(user, 10L);
+
+        assertThrows(IllegalArgumentException.class, () -> fileController.delete(userDetails, 10L));
+    }
 }

@@ -46,6 +46,9 @@ public class FileController {
                                                    @RequestParam(value = "path", required = false) String path) throws IOException {
         log.info("POST /api/files upload requested by=" + (principal != null ? principal.getUsername() : "anonymous") +
                 ", filename=" + file.getOriginalFilename() + ", path=" + (path == null ? "" : path));
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
         User user = currentUser(principal);
         FileMetadata meta = storageService.upload(user, file, path);
         log.info("Upload success userId=" + user.getId() + ", fileId=" + meta.getId() + ", key=" + meta.getS3Key());

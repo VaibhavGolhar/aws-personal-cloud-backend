@@ -1,5 +1,9 @@
 package com.btech_major_project.Personal_Cloud.dto;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.InputStreamResource;
 
@@ -10,6 +14,14 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DtoTest {
+
+    private static Validator validator;
+
+    @BeforeAll
+    static void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
 
     @Test
     void testApiError() {
@@ -106,5 +118,30 @@ class DtoTest {
         assertEquals(1L, response.getId());
         assertEquals("user", response.getUsername());
         assertEquals("Full Name", response.getFullName());
+    }
+
+    @Test
+    void testLoginRequestValidation() {
+        LoginRequest req = new LoginRequest();
+        // Empty fields should violate @NotBlank
+        assertFalse(validator.validate(req).isEmpty());
+        
+        req.setUsername("user");
+        req.setPassword("pass");
+        assertTrue(validator.validate(req).isEmpty());
+    }
+
+    @Test
+    void testRegisterRequestValidation() {
+        RegisterRequest req = new RegisterRequest();
+        // Empty fields should violate @NotBlank
+        assertFalse(validator.validate(req).isEmpty());
+        
+        req.setUsername("user");
+        req.setPassword("short"); // length < 8, should violate @Size
+        assertFalse(validator.validate(req).isEmpty());
+
+        req.setPassword("longenoughpass");
+        assertTrue(validator.validate(req).isEmpty());
     }
 }

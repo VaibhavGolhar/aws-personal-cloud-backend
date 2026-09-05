@@ -69,6 +69,12 @@ AWS_REGION=your_aws_region_here
 S3_BUCKET_NAME=your_s3_bucket_name_here
 
 # ================================
+# Actuator Configuration
+# ================================
+# The URL of your frontend application to ping for health checks
+FRONTEND_URL=http://localhost:3000
+
+# ================================
 # Security Configuration
 # ================================
 # A random secret key for signing JWTs (Must be at least 32 characters long)
@@ -114,6 +120,7 @@ If you prefer to run the application directly on your host machine:
    export AWS_REGION=your_aws_region
    export S3_BUCKET_NAME=your_bucket_name
    export JWT_SECRET=your_jwt_secret_key
+   export FRONTEND_URL=http://localhost:3000
    ```
 4. Build and run the application using the Maven wrapper:
    ```bash
@@ -135,6 +142,17 @@ Once the application is running (either via Docker or Maven), you can explore an
    - Click the green **Authorize** button at the top right of the Swagger UI.
    - Enter your token in the format: `Bearer <your_jwt_token>` and click Authorize.
    - You can now test the secured endpoints (like `/api/files` and `/api/billing/current`).
+
+---
+
+## Step 5: System Health Monitoring (Actuator)
+
+The application includes a unified health check endpoint powered by Spring Boot Actuators to monitor the status of all integrated services (Backend, PostgreSQL, AWS S3, and the Frontend).
+
+You can view the full system health report by navigating to:
+**http://localhost:8080/actuator/health**
+
+This endpoint is publicly accessible and returns a JSON summary indicating if the various components are `UP` or `DOWN`.
 
 ---
 

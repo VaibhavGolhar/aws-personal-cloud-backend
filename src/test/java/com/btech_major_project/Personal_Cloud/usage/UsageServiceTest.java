@@ -134,4 +134,26 @@ class UsageServiceTest {
 
         verify(repo).addOther(1L, 1);
     }
+
+    @Test
+    void onPut_ZeroBytes() {
+        when(repo.findByUserId(1L)).thenReturn(Optional.of(new UserUsage()));
+
+        usageService.onPut(user, 0L, true);
+
+        verify(repo).addPut(1L, 1);
+        verify(repo).addBytes(1L, 0L);
+        verify(repo).addObjects(1L, 1);
+    }
+
+    @Test
+    void onDelete_ZeroBytes() {
+        when(repo.findByUserId(1L)).thenReturn(Optional.of(new UserUsage()));
+
+        usageService.onDelete(user, 0L);
+
+        verify(repo).addDelete(1L, 1);
+        verify(repo).addBytes(1L, 0L);
+        verify(repo).addObjects(1L, -1);
+    }
 }
