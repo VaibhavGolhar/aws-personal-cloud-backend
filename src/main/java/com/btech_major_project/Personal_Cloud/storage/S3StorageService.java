@@ -80,6 +80,15 @@ public class S3StorageService implements StorageService {
         }
     }
 
+    @Override
+    public List<FileMetadata> uploadBulk(User user, List<MultipartFile> files, String subPath) throws IOException {
+        List<FileMetadata> results = new java.util.ArrayList<>();
+        for (MultipartFile file : files) {
+            results.add(upload(user, file, subPath));
+        }
+        return results;
+    }
+
     public List<FileMetadata> list(User user) {
         log.info("List files userId=" + user.getId());
         usageService.onList(user);
@@ -109,6 +118,42 @@ public class S3StorageService implements StorageService {
             String details = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : null;
             log.error("S3 GET failed bucket=" + bucket + ", key=" + meta.getS3Key() + ", msg=" + e.getMessage() + (details != null ? (" details=" + details) : ""), e);
             throw e;
+        }
+    }
+
+    @Override
+    public void downloadBulk(User user, List<Long> fileIds, java.io.OutputStream outputStream) throws IOException {
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(outputStream)) {
+            for (Long fileId : fileIds) {
+                FileMetadata meta = fileRepo.findByIdAndUserId(fileId, user.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("File not found: " + fileId));
+
+                GetObjectRequest getReq = GetObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(meta.getS3Key())
+                        .build();
+                
+                log.info("S3 GET bulk start bucket=" + bucket + ", key=" + meta.getS3Key() + ", fileId=" + fileId);
+                try {
+                    ResponseInputStream<GetObjectResponse> stream = s3.getObject(getReq);
+                    usageService.onGet(user);
+                    
+                    String zipEntryName = meta.getFilename();
+                    if (zipEntryName == null || zipEntryName.isEmpty()) {
+                        zipEntryName = "file_" + fileId;
+                    }
+                    java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(zipEntryName);
+                    zos.putNextEntry(zipEntry);
+                    stream.transferTo(zos);
+                    zos.closeEntry();
+                    stream.close();
+                } catch (S3Exception e) {
+                    String details = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : null;
+                    log.error("S3 GET bulk failed bucket=" + bucket + ", key=" + meta.getS3Key() + ", msg=" + e.getMessage() + (details != null ? (" details=" + details) : ""), e);
+                    throw new IOException("Failed to download file from S3: " + meta.getFilename(), e);
+                }
+            }
+            zos.finish();
         }
     }
 

@@ -57,6 +57,39 @@ public class FileController {
         ));
     }
 
+    @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<FileInfoResponse>> uploadBulk(@AuthenticationPrincipal UserDetails principal,
+                                                             @RequestParam("files") List<MultipartFile> files,
+                                                             @RequestParam(value = "path", required = false) String path) throws IOException {
+        log.info("POST /api/files/bulk upload requested by=" + (principal != null ? principal.getUsername() : "anonymous") +
+                 ", count=" + files.size() + ", path=" + (path == null ? "" : path));
+        if (files.isEmpty()) {
+            throw new IllegalArgumentException("Files list is empty");
+        }
+        User user = currentUser(principal);
+        List<FileMetadata> metas = storageService.uploadBulk(user, files, path);
+        List<FileInfoResponse> responses = metas.stream()
+                .map(meta -> new FileInfoResponse(meta.getId(), meta.getFilename(), meta.getContentType(), meta.getSizeBytes(), meta.getCreatedAt()))
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    @PostMapping(value = "/bulk-download", produces = "application/zip")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> downloadBulk(@AuthenticationPrincipal UserDetails principal,
+                                                                 @RequestBody List<Long> fileIds) {
+        log.info("POST /api/files/bulk-download requested by=" + (principal != null ? principal.getUsername() : "anonymous") + ", count=" + fileIds.size());
+        User user = currentUser(principal);
+
+        org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody responseBody = outputStream -> {
+            storageService.downloadBulk(user, fileIds, outputStream);
+        };
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.attachment().filename("bulk-download.zip").build());
+
+        return new ResponseEntity<>(responseBody, headers, HttpStatus.OK);
+    }
+
     @GetMapping
     public ResponseEntity<List<FileInfoResponse>> list(@AuthenticationPrincipal UserDetails principal) {
         log.info("GET /api/files list requested by=" + (principal != null ? principal.getUsername() : "anonymous"));

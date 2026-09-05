@@ -170,4 +170,41 @@ class FileControllerTest {
 
         assertThrows(IllegalArgumentException.class, () -> fileController.delete(userDetails, 10L));
     }
+
+    @Test
+    void uploadBulk_Success() throws IOException {
+        when(userDetails.getUsername()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(user);
+
+        MultipartFile file1 = new MockMultipartFile("file", "test1.txt", "text/plain", "content1".getBytes());
+        MultipartFile file2 = new MockMultipartFile("file", "test2.txt", "text/plain", "content2".getBytes());
+
+        FileMetadata meta = new FileMetadata();
+        ReflectionTestUtils.setField(meta, "id", 10L);
+        meta.setFilename("test1.txt");
+        meta.setContentType("text/plain");
+        meta.setSizeBytes(7L);
+        ReflectionTestUtils.setField(meta, "createdAt", Instant.now());
+        when(storageService.uploadBulk(eq(user), anyList(), eq("docs"))).thenReturn(List.of(meta));
+
+        ResponseEntity<List<FileInfoResponse>> response = fileController.uploadBulk(userDetails, List.of(file1, file2), "docs");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals(10L, response.getBody().get(0).getId());
+    }
+
+    @Test
+    void downloadBulk_Success() {
+        when(userDetails.getUsername()).thenReturn("testuser");
+        when(userService.findByUsername("testuser")).thenReturn(user);
+
+        ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> response = fileController.downloadBulk(userDetails, List.of(10L));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getHeaders().containsKey("Content-Disposition"));
+        assertEquals("attachment; filename=\"bulk-download.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+    }
 }

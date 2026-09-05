@@ -247,4 +247,43 @@ class S3StorageServiceTest {
         assertThrows(IllegalArgumentException.class, () -> s3StorageService.delete(user, 10L));
         verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
+
+    @Test
+    void uploadBulk_Success() throws IOException {
+        MockMultipartFile file1 = new MockMultipartFile("file", "test1.txt", "text/plain", "content1".getBytes());
+        MockMultipartFile file2 = new MockMultipartFile("file", "test2.txt", "text/plain", "content2".getBytes());
+
+        PutObjectResponse putRes = (PutObjectResponse) PutObjectResponse.builder().eTag("etag123").versionId("v1").build();
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenReturn(putRes);
+
+        FileMetadata savedMeta = new FileMetadata();
+        savedMeta.setSizeBytes(7L);
+        when(fileRepo.save(any(FileMetadata.class))).thenReturn(savedMeta);
+
+        List<FileMetadata> result = s3StorageService.uploadBulk(user, List.of(file1, file2), "docs");
+
+        assertEquals(2, result.size());
+        verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        verify(fileRepo, times(2)).save(any(FileMetadata.class));
+        verify(usageService, times(2)).onPut(user, 7L, true);
+    }
+
+    @Test
+    void downloadBulk_Success() throws IOException {
+        FileMetadata meta = new FileMetadata();
+        meta.setS3Key("u-test/test.txt");
+        meta.setFilename("test.txt");
+        meta.setContentType(null);
+        when(fileRepo.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(meta));
+
+        GetObjectResponse getRes = (GetObjectResponse) GetObjectResponse.builder().build();
+        ResponseInputStream<GetObjectResponse> stream = new ResponseInputStream<>(getRes, AbortableInputStream.create(new ByteArrayInputStream("data".getBytes())));
+        when(s3Client.getObject(any(GetObjectRequest.class))).thenReturn(stream);
+
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        s3StorageService.downloadBulk(user, List.of(10L), bos);
+
+        assertTrue(bos.size() > 0);
+        verify(usageService).onGet(user);
+    }
 }
