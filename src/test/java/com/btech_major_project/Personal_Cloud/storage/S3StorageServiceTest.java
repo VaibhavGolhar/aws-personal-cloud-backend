@@ -143,11 +143,12 @@ class S3StorageServiceTest {
 
     @Test
     void list_Success() {
-        when(fileRepo.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(new FileMetadata()));
+        org.springframework.data.domain.Page<FileMetadata> page = new org.springframework.data.domain.PageImpl<>(List.of(new FileMetadata()));
+        when(fileRepo.findByUserIdOrderByCreatedAtDesc(eq(1L), any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
 
-        List<FileMetadata> result = s3StorageService.list(user);
+        org.springframework.data.domain.Page<FileMetadata> result = s3StorageService.list(user, org.springframework.data.domain.PageRequest.of(0, 50));
 
-        assertEquals(1, result.size());
+        assertEquals(1, result.getContent().size());
         verify(usageService).onList(user);
     }
 

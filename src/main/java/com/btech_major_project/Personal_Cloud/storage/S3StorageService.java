@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class S3StorageService implements StorageService {
@@ -89,11 +91,11 @@ public class S3StorageService implements StorageService {
         return results;
     }
 
-    public List<FileMetadata> list(User user) {
-        log.info("List files userId=" + user.getId());
+    public Page<FileMetadata> list(User user, Pageable pageable) {
+        log.info("List files userId=" + user.getId() + ", page=" + pageable.getPageNumber());
         usageService.onList(user);
-        List<FileMetadata> out = fileRepo.findByUserIdOrderByCreatedAtDesc(user.getId());
-        log.info("List files ok userId=" + user.getId() + ", count=" + out.size());
+        Page<FileMetadata> out = fileRepo.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
+        log.info("List files ok userId=" + user.getId() + ", elements=" + out.getNumberOfElements());
         return out;
     }
 

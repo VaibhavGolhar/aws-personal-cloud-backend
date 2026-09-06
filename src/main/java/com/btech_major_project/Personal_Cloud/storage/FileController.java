@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/files")
@@ -91,13 +94,15 @@ public class FileController {
     }
 
     @GetMapping
-    public ResponseEntity<List<FileInfoResponse>> list(@AuthenticationPrincipal UserDetails principal) {
-        log.info("GET /api/files list requested by=" + (principal != null ? principal.getUsername() : "anonymous"));
+    public ResponseEntity<Page<FileInfoResponse>> list(@AuthenticationPrincipal UserDetails principal,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "50") int size) {
+        log.info("GET /api/files list requested by=" + (principal != null ? principal.getUsername() : "anonymous") + ", page=" + page);
         User user = currentUser(principal);
-        List<FileInfoResponse> list = storageService.list(user).stream()
-                .map(m -> new FileInfoResponse(m.getId(), m.getFilename(), m.getContentType(), m.getSizeBytes(), m.getCreatedAt()))
-                .toList();
-        log.info("List success userId=" + user.getId() + ", count=" + list.size());
+        Pageable pageable = PageRequest.of(page, size);
+        Page<FileInfoResponse> list = storageService.list(user, pageable)
+                .map(m -> new FileInfoResponse(m.getId(), m.getFilename(), m.getContentType(), m.getSizeBytes(), m.getCreatedAt()));
+        log.info("List success userId=" + user.getId() + ", elements=" + list.getNumberOfElements());
         return ResponseEntity.ok(list);
     }
 

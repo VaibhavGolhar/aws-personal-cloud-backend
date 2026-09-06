@@ -81,14 +81,15 @@ class FileControllerTest {
         meta.setFilename("test.txt");
         ReflectionTestUtils.setField(meta, "createdAt", Instant.now());
 
-        when(storageService.list(user)).thenReturn(List.of(meta));
+        org.springframework.data.domain.Page<FileMetadata> page = new org.springframework.data.domain.PageImpl<>(List.of(meta));
+        when(storageService.list(eq(user), any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<FileInfoResponse>> response = fileController.list(userDetails);
+        ResponseEntity<org.springframework.data.domain.Page<FileInfoResponse>> response = fileController.list(userDetails, 0, 50);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-        assertEquals(10L, response.getBody().get(0).getId());
+        assertEquals(1, response.getBody().getContent().size());
+        assertEquals(10L, response.getBody().getContent().get(0).getId());
     }
 
     @Test
@@ -128,7 +129,7 @@ class FileControllerTest {
 
     @Test
     void list_NullPrincipal() {
-        assertThrows(NullPointerException.class, () -> fileController.list(null));
+        assertThrows(NullPointerException.class, () -> fileController.list(null, 0, 50));
     }
 
     @Test

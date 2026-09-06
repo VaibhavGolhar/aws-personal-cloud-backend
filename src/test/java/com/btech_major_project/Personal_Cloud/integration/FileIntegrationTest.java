@@ -87,8 +87,8 @@ public class FileIntegrationTest {
         mockMvc.perform(get("/api/files")
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].filename").value("hello.txt"))
-                .andExpect(jsonPath("$[0].sizeBytes").value(13)); // length of "Hello, World!"
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].filename").value("hello.txt"))
+                .andExpect(jsonPath("$.content[0].sizeBytes").value(13)); // length of "Hello, World!"
     }
 }
